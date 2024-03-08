@@ -2,6 +2,8 @@ package com.storeshop.scheduleportal.dto;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +25,7 @@ public class AvailableDateTimeDto {
 	@Max(24)
 	private Long endTime;
 
+	@JsonBackReference
 	private StaffDto staff;
 
 	public AvailableDateTimeDto() {

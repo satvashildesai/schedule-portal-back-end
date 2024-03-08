@@ -20,11 +20,14 @@ public class SecurityConfig {
 	@Autowired
 	private JwtAuthenticationFilter filter;
 
+	private static final String PRIVATE_URLS[] = { "/portal/**" };
+	private static final String PUBLIC_URLS[] = { "/login", "/swagger-ui/**", "/v3/api-docs/**" };
+
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable())
-				.authorizeRequests(auth -> auth.requestMatchers("/portal/**").authenticated().requestMatchers("/login")
-						.permitAll().anyRequest().authenticated())
+				.authorizeHttpRequests(auth -> auth.requestMatchers(PRIVATE_URLS).authenticated()
+						.requestMatchers(PUBLIC_URLS).permitAll().anyRequest().authenticated())
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(point))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

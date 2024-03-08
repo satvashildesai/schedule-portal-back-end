@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import com.storeshop.scheduleportal.dto.JwtRequestDto;
 import com.storeshop.scheduleportal.exceptions.PasswordMismatchException;
@@ -46,5 +47,10 @@ public class AuthController {
 
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(new SuccessResponse("200", "SUCCESS", "User authenticate successfully.", tokenData));
+	}
+
+	@GetMapping("/portal/validate")
+	public Object tokenCheck() {
+		return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse("200", "SUCCESS", "Valid token."));
 	}
 }

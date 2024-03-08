@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.storeshop.scheduleportal.dto.ScheduleDto;
+import com.storeshop.scheduleportal.entity.ShiftAssignmentModel;
 import com.storeshop.scheduleportal.exceptions.InvalidStaffCountException;
 import com.storeshop.scheduleportal.exceptions.RequestNotValidException;
 import com.storeshop.scheduleportal.exceptions.ResourceAlreadyAssignedException;
@@ -42,6 +43,19 @@ public class ScheduleController {
 		shiftAssignService.assignShiftToStaff(assignedShift);
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(new SuccessResponse("200", "SUCCESS", "Staff assigned to shift successfully"));
+	}
+
+//	Get assigned shift from given range of date
+	@GetMapping("assign/date")
+	public Object getAssignedShiftByDateRange(@RequestParam(value = "startDate") String startDate,
+			@RequestParam(value = "endDate") String endDate) throws ResourceNotFoundException {
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		List<ShiftAssignmentModel> assignedShiftList = shiftAssignService.getAssignedShiftByDateRange(
+				LocalDate.parse(startDate, formatter), LocalDate.parse(endDate, formatter));
+
+		return ResponseEntity.status(HttpStatus.OK).body(
+				new SuccessResponse("200", "SUCCESS", "Assigned shift found.", new ArrayList<>(assignedShiftList)));
 	}
 
 //	Get assigned details by id

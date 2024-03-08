@@ -1,8 +1,10 @@
 package com.storeshop.scheduleportal.repository;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -41,6 +43,10 @@ public interface ScheduleRepository extends JpaRepository<ShiftAssignmentModel, 
 	@Query("select id from ShiftAssignmentModel where shiftSheduleId = ?1")
 	List<Long> FindAllByShiftId(ShiftScheduleModel shift);
 
+//	Find all assigned shift from given date range
+	@Query(nativeQuery = true, value = "select sam.id from shift_assignment_model sam inner join shift_schedule_model ssm on sam.shift_shedule_id_id = ssm.id where date between ?1 and ?2")
+	Set<Long> findAssignedShiftByDateRange(LocalDate startDate, LocalDate endDate);
+
 //	Return all staff id assigned to shift
 	@Query(nativeQuery = true, value = "select staff_member_id_id from shift_assignment_model where shift_shedule_id_id = ?1")
 	List<Long> getStaffIdsByShiftId(long shiftId);
@@ -60,7 +66,7 @@ public interface ScheduleRepository extends JpaRepository<ShiftAssignmentModel, 
 //	Update the shift schedule status
 	@Modifying
 	@Transactional
-	@Query(nativeQuery = true, value = "update shift_schedule_model set is_scheduled = ?1 where id = ?2")
-	void shiftScheduledUpdate(boolean status, Long id);
+	@Query("update ShiftScheduleModel set isScheduled = ?1, scheduledAt = ?2 where id = ?3")
+	void shiftScheduledUpdate(boolean status, Timestamp timestamp, Long id);
 
 }

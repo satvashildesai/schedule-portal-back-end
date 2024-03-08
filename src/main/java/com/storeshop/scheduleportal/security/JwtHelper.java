@@ -1,5 +1,7 @@
 package com.storeshop.scheduleportal.security;
 
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtHelper {
@@ -30,7 +33,7 @@ public class JwtHelper {
 		return getClaimFromToken(token, Claims::getExpiration);
 	}
 
-//	---------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------
 
 	public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
 		final Claims claims = getAllClaimsFromToken(token);
@@ -39,10 +42,10 @@ public class JwtHelper {
 
 	// for retrieveing any information from token we will need the secret key
 	private Claims getAllClaimsFromToken(String token) {
-		return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+		return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
 	}
 
-//		-----------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------
 
 	// generate token for user
 	public String generateToken(UserDetails userDetails) {
@@ -55,10 +58,16 @@ public class JwtHelper {
 
 		return Jwts.builder().setClaims(claims).setSubject(username).setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
-				.signWith(SignatureAlgorithm.HS512, secretKey).compact();
+				.signWith(getSigningKey(), SignatureAlgorithm.HS512).compact();
 	}
 
-//		------------------------------------------------------------------------------------------------------------
+//	Encode the secrate key
+	private Key getSigningKey() {
+		byte[] keyBytes = this.secretKey.getBytes(StandardCharsets.UTF_8);
+		return Keys.hmacShaKeyFor(keyBytes);
+	}
+
+//--------------------------------------------------------------------------------------------------------------
 
 	// validate token
 	public Boolean validateToken(String token, UserDetails userDetails) {

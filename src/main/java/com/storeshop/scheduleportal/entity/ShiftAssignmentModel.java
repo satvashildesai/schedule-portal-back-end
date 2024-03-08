@@ -57,5 +57,4 @@ public class ShiftAssignmentModel {
 		return "ShiftAssignmentModel [id=" + id + ", shiftSheduleId=" + shiftSheduleId + ", staffMemberId="
 				+ staffMemberId + "]";
 	}
-
 }

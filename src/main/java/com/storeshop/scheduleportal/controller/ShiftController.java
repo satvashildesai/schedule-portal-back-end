@@ -64,7 +64,7 @@ public class ShiftController {
 //	Get shifts of given date range
 	@GetMapping("/shift/daterange")
 	public Object getShiftByDateRange(@RequestParam(value = "sDate") String sDate,
-			@RequestParam(value = "eDate") String eDate) {
+			@RequestParam(value = "eDate") String eDate) throws ResourceNotFoundException {
 		List<LocalDate> dateArr = new ArrayList<>();
 
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");

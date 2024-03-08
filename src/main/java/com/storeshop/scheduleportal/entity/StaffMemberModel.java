@@ -1,5 +1,6 @@
 package com.storeshop.scheduleportal.entity;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -26,6 +27,12 @@ public class StaffMemberModel {
 	@OneToMany(mappedBy = "staff", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JsonManagedReference
 	private List<AvailableDateTimeModel> availableDateTime;
+
+	@Column(nullable = false)
+	private Timestamp createdAt;
+
+	@Column(nullable = false)
+	private Timestamp updatedAt;
 
 	public StaffMemberModel() {
 		super();
@@ -62,23 +69,26 @@ public class StaffMemberModel {
 		this.availableDateTime = availableDateTime;
 	}
 
+	public Timestamp getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Timestamp createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public Timestamp getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(Timestamp updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
 	@Override
 	public String toString() {
-		return "StaffMemberModel [id=" + id + ", name=" + name + ", availableDateTime=" + availableDateTime + "]";
+		return "StaffMemberModel [id=" + id + ", name=" + name + ", availableDateTime=" + availableDateTime
+				+ ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
 	}
-}
 
-//@Column(nullable = false)
-//@ElementCollection
-//@CollectionTable(name = "available_dates", joinColumns = @JoinColumn(name = "staffId", referencedColumnName = "id"))
-//private List<LocalDate> dates;
-//
-//@Column(nullable = false)
-//@ElementCollection
-//@CollectionTable(name = "available_dates", joinColumns = @JoinColumn(name = "staffId", referencedColumnName = "id"))
-//private List<Long> startTimes;
-//
-//@Column(nullable = false)
-//@ElementCollection
-//@CollectionTable(name = "available_dates", joinColumns = @JoinColumn(name = "staffId", referencedColumnName = "id"))
-//private List<Long> endTimes;
+}

@@ -1,5 +1,7 @@
 package com.storeshop.scheduleportal.service;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -26,11 +28,21 @@ public class ShiftService {
 	@Autowired
 	private ScheduleRepository scheduleRepo;
 
-//	Create and save the new shift
+//	This constructor is used to create mock repository for the unit testing
+	public ShiftService(ShiftRepository shiftRepo, ScheduleRepository scheduleRepo) {
+		this.repo = shiftRepo;
+		this.scheduleRepo = scheduleRepo;
+	}
+
+	// Create and save the new shift
 	public ShiftDto saveShift(ShiftDto shift) throws RequestNotValidException, FailedToSaveException {
 
 		if (isRequestValid(shift)) {
 			ShiftScheduleModel shiftEntity = ShiftMapper.shiftMap(shift, new ShiftScheduleModel());
+			Timestamp dateTime = Timestamp.from(Instant.now());
+			shiftEntity.setCreatedAt(dateTime);
+			shiftEntity.setUpdatedAt(dateTime);
+
 			ShiftScheduleModel savedShift = repo.save(shiftEntity);
 			if (savedShift == null) {
 				throw new FailedToSaveException("Failed to save shift on portal, please try once again");
@@ -53,6 +65,9 @@ public class ShiftService {
 				throw new RequestNotValidException("Can't edit shift, shift is scheduled.");
 			}
 
+			Timestamp dateTime = Timestamp.from(Instant.now());
+			shiftEntity.setUpdatedAt(dateTime);
+
 			ShiftScheduleModel updatedShift = repo.save(shiftEntity);
 			if (updatedShift == null) {
 				throw new FailedToSaveException(
@@ -65,10 +80,14 @@ public class ShiftService {
 	}
 
 //	Return the list of shift from specific date range
-	public List<ShiftScheduleModel> getShiftByDateRange(List<LocalDate> dateArr) {
+	public List<ShiftScheduleModel> getShiftByDateRange(List<LocalDate> dateArr) throws ResourceNotFoundException {
 //		return repo.findShiftByDateRange(dateArr.get(0), dateArr.get(1));
 
 		Set<Long> shiftIds = repo.findShiftByDateRange(dateArr.get(0), dateArr.get(1));
+		if (shiftIds.isEmpty()) {
+			throw new ResourceNotFoundException(
+					"No shift is found for the given date range(" + dateArr.get(0) + " to " + dateArr.get(1) + ").");
+		}
 		return repo.findAllById(shiftIds);
 	}
 

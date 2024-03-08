@@ -1,5 +1,7 @@
 package com.storeshop.scheduleportal.service;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -30,12 +32,23 @@ public class StaffService {
 	@Autowired
 	private ScheduleRepository scheduleRepo;
 
+//	This constructor is use to create mock repository to perform unit testing
+	public StaffService(StaffRepository repo, AvailableDateTimeRepository dateTimeRepo,
+			ScheduleRepository scheduleRepo) {
+		this.repo = repo;
+		this.dateTimeRepo = dateTimeRepo;
+		this.scheduleRepo = scheduleRepo;
+	}
+
 //	Create and save new staff
-	public void saveMember(StaffDto staffDto)
-			throws RequestNotValidException, FailedToSaveException, ResourceNotFoundException {
+	public void saveMember(StaffDto staffDto) throws RequestNotValidException, FailedToSaveException {
 
 		if (isRequestValid(staffDto)) {
 			StaffMemberModel staffEntity = StaffMapper.staffMap(staffDto, new StaffMemberModel());
+			Timestamp dateTime = Timestamp.from(Instant.now());
+			staffEntity.setCreatedAt(dateTime);
+			staffEntity.setUpdatedAt(dateTime);
+
 			StaffMemberModel savedStaff = repo.save(staffEntity);
 
 			if (savedStaff == null) {
@@ -61,17 +74,12 @@ public class StaffService {
 				throw new RequestNotValidException("Can't edit staff, staff is scheduled.");
 			}
 
-			dateTimeRepo.deleteAllByStaffId(dbStaff);
-
-//			Update the AvailableDateTime list
-//			List<AvailableDateTimeDto> dateTime = staffDto.getAvailableDateTime();
-//			List<AvailableDateTimeModel> dbDateTime = dbStaff.getAvailableDateTime();
-//			int dateTimeCount = dbDateTime.size();
-//			for (int i = 0; i < dateTimeCount; i++) {
-//				dateTime.get(i).setId(dbDateTime.get(i).getId());
-//			}
-
 			StaffMemberModel staffEntity = StaffMapper.updatedStaffMap(staffDto, new StaffMemberModel());
+			System.err.println(staffEntity.getCreatedAt() + " " + staffEntity.getUpdatedAt());
+			dateTimeRepo.deleteAllAvailableDateTimeByStaffId(dbStaff);
+
+			Timestamp dateTime = Timestamp.from(Instant.now());
+			staffEntity.setUpdatedAt(dateTime);
 
 			StaffMemberModel updatedStaff = repo.save(staffEntity);
 			if (updatedStaff == null) {
@@ -85,8 +93,12 @@ public class StaffService {
 	}
 
 //	Get staff by date range
-	public List<StaffMemberModel> getStaffByDateRange(List<LocalDate> dateArr) {
+	public List<StaffMemberModel> getStaffByDateRange(List<LocalDate> dateArr) throws ResourceNotFoundException {
 		Set<Long> staffIds = repo.getStaffByDateRange(dateArr.get(0), dateArr.get(1));
+		if (staffIds.isEmpty()) {
+			throw new ResourceNotFoundException(
+					"Staff not found in given date range(" + dateArr.get(0) + " to " + dateArr.get(1) + ")");
+		}
 		return repo.findAllById(staffIds);
 	}
 

@@ -12,12 +12,13 @@ public class StaffMapper {
 
 	public static StaffMemberModel staffMap(StaffDto dto, StaffMemberModel entity) {
 		entity.setName(dto.getName());
+		entity.setCreatedAt(dto.getCreatedAt());
+		entity.setUpdatedAt(dto.getUpdatedAt());
 
 		List<AvailableDateTimeModel> modelDateTime = new ArrayList<>();
 		for (AvailableDateTimeDto dt : dto.getAvailableDateTime()) {
 			modelDateTime.add(new AvailableDateTimeModel(dt.getDate(), dt.getStartTime(), dt.getEndTime(), entity));
 		}
-
 		entity.setAvailableDateTime(modelDateTime);
 		return entity;
 	}
@@ -25,12 +26,13 @@ public class StaffMapper {
 	public static StaffMemberModel updatedStaffMap(StaffDto dto, StaffMemberModel entity) {
 		entity.setId(dto.getId());
 		entity.setName(dto.getName());
+		entity.setCreatedAt(dto.getCreatedAt());
+		entity.setUpdatedAt(dto.getUpdatedAt());
 
 		List<AvailableDateTimeModel> modelDateTime = new ArrayList<>();
 		for (AvailableDateTimeDto dt : dto.getAvailableDateTime()) {
 			modelDateTime.add(new AvailableDateTimeModel(dt.getDate(), dt.getStartTime(), dt.getEndTime(), entity));
 		}
-
 		entity.setAvailableDateTime(modelDateTime);
 		return entity;
 	}

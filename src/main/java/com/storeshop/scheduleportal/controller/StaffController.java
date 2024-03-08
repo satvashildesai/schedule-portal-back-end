@@ -40,7 +40,7 @@ public class StaffController {
 //	Crate and save new staff member
 	@PostMapping("/staff")
 	public Object saveMember(@Valid @RequestBody StaffDto member)
-			throws RequestNotValidException, FailedToSaveException, ResourceNotFoundException {
+			throws RequestNotValidException, FailedToSaveException {
 
 		staffService.saveMember(member);
 		return ResponseEntity.status(HttpStatus.CREATED)
@@ -59,7 +59,7 @@ public class StaffController {
 
 //	Get staff by given date range
 	@GetMapping("/staff/date/{dateRange}")
-	public Object getStaffByDateRange(@PathVariable String dateRange) {
+	public Object getStaffByDateRange(@PathVariable String dateRange) throws ResourceNotFoundException {
 		String[] splitDateString = dateRange.split(",");
 		List<LocalDate> dateArr = new ArrayList<>();
 

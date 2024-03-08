@@ -15,6 +15,6 @@ public interface AvailableDateTimeRepository extends JpaRepository<AvailableDate
 	@Modifying
 	@Transactional
 	@Query("delete from AvailableDateTimeModel where staff = ?1")
-	void deleteAllByStaffId(StaffMemberModel dbStaff);
+	void deleteAllAvailableDateTimeByStaffId(StaffMemberModel dbStaff);
 
 }

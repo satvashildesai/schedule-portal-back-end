@@ -1,8 +1,11 @@
 package com.storeshop.scheduleportal.service;
 
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,13 +25,20 @@ import com.storeshop.scheduleportal.repository.StaffRepository;
 @Service
 public class ScheduleService {
 	@Autowired
-	private ScheduleRepository shiftAssignmentRepo;
+	private ScheduleRepository repo;
 
 	@Autowired
 	private StaffRepository staffRepo;
 
 	@Autowired
 	private ShiftRepository shiftRepo;
+
+//	
+	public ScheduleService(ScheduleRepository scheduleRepo, StaffRepository staffRepo, ShiftRepository shiftRepo) {
+		this.repo = scheduleRepo;
+		this.staffRepo = staffRepo;
+		this.shiftRepo = shiftRepo;
+	}
 
 //	Assign staff to the list
 	public void assignShiftToStaff(ScheduleDto assignedShift) throws ResourceNotFoundException,
@@ -47,55 +57,67 @@ public class ScheduleService {
 
 		if (validationStatus) {
 			for (StaffMemberModel staff : staffList) {
-				shiftAssignmentRepo.save(new ShiftAssignmentModel(shift, staff));
-				shiftAssignmentRepo.staffScheduledUpdate(shift.getDate(), staff.getId());
+				repo.save(new ShiftAssignmentModel(shift, staff));
+				repo.staffScheduledUpdate(shift.getDate(), staff.getId());
 			}
-			shiftAssignmentRepo.shiftScheduledUpdate(true, shift.getId());
+			repo.shiftScheduledUpdate(true, Timestamp.from(Instant.now()), shift.getId());
 		}
 	}
 
-//	Get staff-shift-assigned details by id
+//	Get assigned shift details from given date range
+	public List<ShiftAssignmentModel> getAssignedShiftByDateRange(LocalDate startDate, LocalDate endDate)
+			throws ResourceNotFoundException {
+		Set<Long> assignedShiftIds = repo.findAssignedShiftByDateRange(startDate, endDate);
+		if (assignedShiftIds.isEmpty()) {
+			throw new ResourceNotFoundException(
+					"No shift assigned in the given date range(" + startDate + " to " + endDate + ").");
+		}
+		System.err.println(assignedShiftIds);
+		return repo.findAllById(assignedShiftIds);
+	}
+
+//	Get assigned shift details by id
 	public List<ShiftAssignmentModel> getAssignedDetails(long shiftId) throws ResourceNotFoundException {
 
 		ShiftScheduleModel shift = new ShiftScheduleModel();
 		shift.setId(shiftId);
-		List<Long> assignedIds = shiftAssignmentRepo.FindAllByShiftId(shift);
+		List<Long> assignedIds = repo.FindAllByShiftId(shift);
 		if (assignedIds.isEmpty()) {
 			throw new ResourceNotFoundException("No staff assignment done for the shift whit shift id: " + shiftId
 					+ ", please enter valid shift id");
 		}
-		return shiftAssignmentRepo.findAllById(assignedIds);
+		return repo.findAllById(assignedIds);
 	}
 
-//	Get all staff-shift-assigned details
+//	Get all assigned shift details
 	public List<ShiftAssignmentModel> getAllAssignedDetails() throws ResourceNotFoundException {
-		List<ShiftAssignmentModel> shiftAssignList = shiftAssignmentRepo.findAll();
+		List<ShiftAssignmentModel> shiftAssignList = repo.findAll();
 		if (shiftAssignList.isEmpty()) {
 			throw new ResourceNotFoundException("Shift not scheduled yet.");
 		}
 		return shiftAssignList;
 	}
 
-//	Delete staff-shift-assigned schedule
+//	Delete assigned shift
 	public void deleteAssignedSchedule(long shiftId, LocalDate shiftDate) throws ResourceNotFoundException {
 		ShiftScheduleModel shift = new ShiftScheduleModel();
 		shift.setId(shiftId);
 
-		List<Long> assignedShiftIds = shiftAssignmentRepo.FindAllByShiftId(shift);
+		List<Long> assignedShiftIds = repo.FindAllByShiftId(shift);
 		if (assignedShiftIds.isEmpty()) {
 			throw new ResourceNotFoundException("Staff-shift-assignment for shift with shift id: " + shiftId
 					+ " is not exists, please enter valid shift id");
 		}
 
 //		Get staff id using scheduled shift
-		List<Long> staffIds = shiftAssignmentRepo.getStaffIdsByShiftId(shiftId);
+		List<Long> staffIds = repo.getStaffIdsByShiftId(shiftId);
 
-		shiftAssignmentRepo.deleteAllById(assignedShiftIds);
+		repo.deleteAllById(assignedShiftIds);
 
 //		Update staff availability status
-		shiftAssignmentRepo.updateStaffAvailability(staffIds, shiftDate);
+		repo.updateStaffAvailability(staffIds, shiftDate);
 //		Update shift availability status
-		shiftAssignmentRepo.shiftScheduledUpdate(false, shift.getId());
+		repo.shiftScheduledUpdate(false, null, shift.getId());
 	}
 
 //	Validate the staff-shift-assignment request
@@ -104,7 +126,7 @@ public class ScheduleService {
 			InvalidStaffCountException, RequestNotValidException {
 
 //		Check that the shift is already scheduled or not
-		List<Long> assignedIdList = shiftAssignmentRepo.existsByShiftId(shift.getId());
+		List<Long> assignedIdList = repo.existsByShiftId(shift.getId());
 		if (!assignedIdList.isEmpty()) {
 			throw new ResourceAlreadyAssignedException("Shift with id: " + shift.getId() + " is already schedule");
 		}
@@ -137,15 +159,14 @@ public class ScheduleService {
 			}
 
 //			Check the staff is present on shift date
-			Long id = shiftAssignmentRepo.findAvailableStaffByDate(staff.getId(), shift.getDate());
+			Long id = repo.findAvailableStaffByDate(staff.getId(), shift.getDate());
 			if (id == null) {
 				throw new RequestNotValidException(
 						"Staff with id: " + staff.getId() + " is not available on date: " + shift.getDate());
 			}
 
 //			Check the staff is present on shift's start time and end time
-			id = shiftAssignmentRepo.findAvailableStaffByTime(staff.getId(), shift.getStartTime(), shift.getEndTime(),
-					id);
+			id = repo.findAvailableStaffByTime(staff.getId(), shift.getStartTime(), shift.getEndTime(), id);
 			if (id == null) {
 				throw new RequestNotValidException(
 						"Staff with id: " + staff.getId() + " is not available on given shift time range");
@@ -159,7 +180,7 @@ public class ScheduleService {
 //	Check that the staff is assigned to any other shift on same day
 	private boolean isStaffAlreadyAssigned(ShiftScheduleModel shift, StaffMemberModel staff) {
 
-		List<Date> staffAssigendDateList = shiftAssignmentRepo.findAllAssignedDateByStaffId(staff.getId());
+		List<Date> staffAssigendDateList = repo.findAllAssignedDateByStaffId(staff.getId());
 
 		Date shiftDate = Date.valueOf(shift.getDate());
 		if (staffAssigendDateList.contains(shiftDate)) {
@@ -169,37 +190,3 @@ public class ScheduleService {
 	}
 
 }
-
-//Get count of assigned staff for the give shift
-//long staffAssignedCount = repo.countByShiftSheduleId(shift);
-
-//Get staff list to check that the assigning staff is already present or not
-//List<StaffMemberModel> assignedStaffList = repo.findStaffByShift(shift);
-
-//Get AvailableDateTime entity of particular staff
-//List<AvailableDateTime> dateTimes = staffRepo.findAllByStaff(staffList);
-
-//List<AvailableDateTimeModel> dateTimes = staff.getAvailableDateTime();
-//boolean isAvailableOnDate = false;
-//boolean isAvailableOnTime = false;
-//
-////Check if the staff is present on date or time
-//for (AvailableDateTimeModel dt : dateTimes) {
-//
-//	if (dt.getDate().isEqual(shift.getDate())) {
-//		isAvailableOnDate = true;
-//
-//		if (dt.getStartTime() <= shift.getStartTime() && dt.getEndTime() >= shift.getEndTime()) {
-//			isAvailableOnTime = true;
-//			break;
-//		}
-//	}
-//}
-//
-//if (!isAvailableOnDate) {
-//	return new AssignmentResultUtil(3, staff.getId() + " : " + staff.getName());
-//}
-//
-//if (!isAvailableOnTime) {
-//	return new AssignmentResultUtil(4, staff.getId() + " : " + staff.getName());
-//}

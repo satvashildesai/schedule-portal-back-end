@@ -19,6 +19,8 @@ public class ShiftMapper {
 		entity.setStartTime(dto.getStartTime());
 		entity.setEndTime(dto.getEndTime());
 		entity.setRequiredStaffCount(dto.getRequiredStaffCount());
+		entity.setCreatedAt(dto.getCreatedAt());
+		entity.setUpdatedAt(dto.getUpdatedAt());
 		return entity;
 	}
 
@@ -28,6 +30,8 @@ public class ShiftMapper {
 		dto.setStartTime(entity.getStartTime());
 		dto.setEndTime(entity.getEndTime());
 		dto.setRequiredStaffCount(entity.getRequiredStaffCount());
+		dto.setCreatedAt(entity.getCreatedAt());
+		dto.setUpdatedAt(entity.getUpdatedAt());
 		return dto;
 	}
 }
